@@ -79,6 +79,7 @@ use std::fmt::Debug;
 use libc::{AF_INET, AF_INET6, SOCK_DGRAM, IPPROTO_UDPLITE, SOCK_CLOEXEC};
 use libc::{socket, bind, getsockopt, setsockopt, socklen_t};
 use libc::{sockaddr_storage, sockaddr_in, sockaddr_in6, sockaddr, sa_family_t};
+use libc::{ioctl, FIOCLEX, FIONCLEX, fcntl, F_GETFD, FD_CLOEXEC};
 use libc::{UDPLITE_SEND_CSCOV, UDPLITE_RECV_CSCOV};
 
 pub struct UdpLiteSocket {
@@ -315,6 +316,47 @@ impl UdpLiteSocket {
             (0, _) => Err(io::Error::new(InvalidData, "Returned coverage is outside of valid range")),
             (-1, _) => Err(io::Error::last_os_error()),
             (_, _) => Err(io::Error::new(InvalidData, "Unexpected return value from getsockopt()")),
+        }
+    }
+
+    /// Enable or disable close-on-exec for the socket.
+    ///
+    /// Close-on-exec ensures that a file descriptor is automatically closed
+    /// by the OS when the process starts another executable.
+    ///
+    /// It is set by default for sockets created by this crate,
+    /// as is standard behavior in Rust.
+    pub fn set_cloexec(&self,  close_on_exec: bool) -> Result<(), io::Error> {
+        unsafe {
+            let op = if close_on_exec {FIOCLEX} else {FIONCLEX};
+            match ioctl(self.as_raw_fd(), op) {
+                -1 => Err(io::Error::last_os_error()),
+                _ => Ok(()),
+            }
+        }
+    }
+
+    /// Check whether close-on-exec is set for the socket file descriptor.
+    ///
+    /// It's set by default, but can be disabled with [`set_cloexec(false)`](#method.set_cloexec).
+    ///
+    /// # Errors
+    ///
+    /// This can pretty much only fail if the file descriptor doesn't exist,
+    /// which can only happen with invalid usage of `from_raw_fd()`,
+    /// `ptr::read()` or the like.
+    ///
+    /// In that case the fd might later be reused for something else,
+    /// so this returning an error can not be relied on.
+    ///
+    /// If the fd is closed now it will remain closed after `exec()`,
+    /// so one might write `.is_cloexec().unwrap_or(true)`;
+    pub fn is_cloexec(&self) -> Result<bool, io::Error> {
+        unsafe {
+            match fcntl(self.as_raw_fd(), F_GETFD) {
+                -1 => Err(io::Error::last_os_error()),
+                flags => Ok(flags & FD_CLOEXEC != 0),
+            }
         }
     }
 }
