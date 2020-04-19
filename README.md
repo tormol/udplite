@@ -18,7 +18,8 @@ It's not been released on crates.io yet as it depends on constants not yet avail
 
 ## Supported operating systems
 
-UDP-Lite is only implemented by Linux, Android and FreeBSD.
+UDP-Lite is only implemented by Linux and FreeBSD.
+Whether Android supports it I'm not sure about: The kernel has [the constants](https://android.googlesource.com/kernel/common/+/refs/heads/android-mainline/include/net/udplite.h), but some of them are missing from bionic (the Android libc). (only `IPPROTO_UDPLITE` [is present](https://android.googlesource.com/platform/bionic.git/+/refs/heads/master/libc/kernel/uapi/linux/in.h))
 
 ## Minimum supported Rust version
 
