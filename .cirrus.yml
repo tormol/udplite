@@ -16,9 +16,10 @@ task:
   build_script:
     - . $HOME/.cargo/env
     - cargo build
+    - cargo build --all-features
   test_script:
     - . $HOME/.cargo/env
-    - cargo test --no-fail-fast
+    - cargo test --no-fail-fast --all-features
   before_cache_script:
     - rm -rf $HOME/.cargo/registry/index
 
@@ -35,11 +36,13 @@ task:
     fingerprint_script: cat Cargo.lock 2> /dev/null || true
   build_script:
     - cargo build
+    - cargo build --all-features
   test_script:
     - ip addr
     - cat /etc/hosts || true
     - ip addr add ::1 dev lo scope host
-    - cargo test --no-fail-fast
+    - cargo test --no-fail-fast --all-features
+    - cargo run --example limits
   before_cache_script:
     - rm -rf $HOME/.cargo/registry/index
 
@@ -56,8 +59,13 @@ task:
     fingerprint_script: cat Cargo.lock 2> /dev/null || true
   build_script:
     - cargo build -Z minimal-versions
+    - cargo build -Z minimal-versions --features mio_06
+    - cargo build -Z minimal-versions --features mio_07
+    - cargo build -Z minimal-versions --all-features
   test_script:
+    - rm Cargo.lock
     - cargo test -Z minimal-versions --no-fail-fast
+    - cargo test -Z minimal-versions --no-fail-fast --all-features
   before_cache_script:
     - rm -rf $HOME/.cargo/registry/index
 
@@ -78,11 +86,11 @@ task:
     folder: $HOME/.cargo/registry
     fingerprint_script: cat Cargo.lock 2> /dev/null || true
   build_script:
-    - cargo build --target i686-unknown-linux-gnu
-    - cargo build --target i686-unknown-linux-musl
+    - cargo build --target i686-unknown-linux-gnu --all-features
+    - cargo build --target i686-unknown-linux-musl --all-features
   test_script:
-    - cargo test --target i686-unknown-linux-gnu --no-fail-fast
-    - cargo test --target i686-unknown-linux-musl --no-fail-fast
+    - cargo test --target i686-unknown-linux-gnu --no-fail-fast --all-features
+    - cargo test --target i686-unknown-linux-musl --no-fail-fast --all-features
   before_cache_script:
     - rm -rf $HOME/.cargo/registry/index
 
@@ -101,9 +109,9 @@ task:
     folder: $HOME/.cargo/registry
     fingerprint_script: cat Cargo.lock 2> /dev/null || true
   build_script:
-    - cargo clippy
-    - cargo check --target aarch64-linux-android --tests --examples
-    - cargo check --target x86_64-unknown-linux-gnux32 --tests --examples
-    - cargo check --target powerpc-unknown-linux-gnu --tests --examples
+    - cargo clippy --all-features
+    - cargo check --target aarch64-linux-android --tests --examples --all-features
+    - cargo check --target x86_64-unknown-linux-gnux32 --tests --examples --all-features
+    - cargo check --target powerpc-unknown-linux-gnu --tests --examples --all-features
   before_cache_script:
     - rm -rf $HOME/.cargo/registry/index

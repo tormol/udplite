@@ -21,6 +21,18 @@ It's not been released on crates.io yet as it depends on constants not yet avail
 UDP-Lite is only implemented by Linux and FreeBSD.
 Whether Android supports it I'm not sure about: The kernel has [the constants](https://android.googlesource.com/kernel/common/+/refs/heads/android-mainline/include/net/udplite.h), but some of them are missing from bionic (the Android libc). (only `IPPROTO_UDPLITE` [is present](https://android.googlesource.com/platform/bionic.git/+/refs/heads/master/libc/kernel/uapi/linux/in.h))
 
+## mio integration
+
+Like UDP sockets, UDP-Lite sockets can be registered with epoll / kqueue, and therefore used with [mio](https://github.com/tokio-rs/mio).
+This feature is not enabled by default; enable it in Cargo.toml with:
+
+```toml
+[dependencies]
+udplite = {version="0.0.0", features=["mio_07"]}
+```
+
+Also remember to enable nonblocking mode for the sockets. (`UdpLiteSocket.set_nonblocking(true)`)
+
 ## Minimum supported Rust version
 
 The minimum supported Rust version is 1.36.

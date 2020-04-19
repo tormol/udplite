@@ -59,7 +59,6 @@
 //!
 //! # Possible future features (open an issue if you want one)
 //!
-//! * Optional mio integration (both mio v0.6 and v0.7).
 //! * Optional tokio integration.
 //! * Vectored I/O (`std`s `UdpSocket` doesn't have this yet either).
 //! * Exposing more POSIX socket options and flags for `send()` and `recv()`.
@@ -67,6 +66,10 @@
 //! * Getting TTL and/or timestamp of received datagrams.
 
 extern crate libc;
+#[cfg(feature="mio_06")]
+extern crate mio_06;
+#[cfg(feature="mio_07")]
+extern crate mio_07;
 
 use std::os::raw::{c_int, c_void};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
@@ -81,6 +84,14 @@ use libc::{socket, bind, getsockopt, setsockopt, socklen_t};
 use libc::{sockaddr_storage, sockaddr_in, sockaddr_in6, sockaddr, sa_family_t};
 use libc::{ioctl, FIOCLEX, FIONCLEX, fcntl, F_GETFD, FD_CLOEXEC};
 use libc::{UDPLITE_SEND_CSCOV, UDPLITE_RECV_CSCOV};
+
+#[cfg(feature="mio_06")]
+use mio_06::{event::Evented, unix::EventedFd, Poll, Token as Token_06, Ready, PollOpt};
+
+#[cfg(feature="mio_07")]
+use mio_07::{event::Source, unix::SourceFd, Registry, Token as Token_07, Interest};
+
+
 
 pub struct UdpLiteSocket {
     as_udp: UdpSocket,
@@ -358,6 +369,53 @@ impl UdpLiteSocket {
                 flags => Ok(flags & FD_CLOEXEC != 0),
             }
         }
+    }
+}
+
+
+
+#[cfg(feature="mio_06")]
+impl Evented for UdpLiteSocket {
+    fn register(&self,  poll: &Poll,  token: Token_06,  interest: Ready,  opts: PollOpt)
+    -> Result<(), io::Error> {
+        EventedFd(&self.as_raw_fd()).register(poll, token, interest, opts)
+    }
+    fn reregister(&self,  poll: &Poll,  token: Token_06,  interest: Ready,  opts: PollOpt)
+    -> Result<(), io::Error> {
+        EventedFd(&self.as_raw_fd()).reregister(poll, token, interest, opts)
+    }
+    fn deregister(&self,  poll: &Poll) -> Result<(), io::Error> {
+        EventedFd(&self.as_raw_fd()).deregister(poll)
+    }
+}
+
+#[cfg(feature="mio_07")]
+impl Source for UdpLiteSocket {
+    fn register(&mut self,  registry: &Registry,  token: Token_07,  interest: Interest)
+    -> Result<(), io::Error> {
+        SourceFd(&self.as_raw_fd()).register(registry, token, interest)
+    }
+    fn reregister(&mut self,  registry: &Registry,  token: Token_07,  interest: Interest)
+    -> Result<(), io::Error> {
+        SourceFd(&self.as_raw_fd()).reregister(registry, token, interest)
+    }
+    fn deregister(&mut self,  registry: &Registry) -> Result<(), io::Error> {
+        SourceFd(&self.as_raw_fd()).deregister(registry)
+    }
+}
+
+#[cfg(feature="mio_07")]
+impl<'a> Source for &'a UdpLiteSocket {
+    fn register(&mut self,  registry: &Registry,  token: Token_07,  interest: Interest)
+    -> Result<(), io::Error> {
+        SourceFd(&self.as_raw_fd()).register(registry, token, interest)
+    }
+    fn reregister(&mut self,  registry: &Registry,  token: Token_07,  interest: Interest)
+    -> Result<(), io::Error> {
+        SourceFd(&self.as_raw_fd()).reregister(registry, token, interest)
+    }
+    fn deregister(&mut self,  registry: &Registry) -> Result<(), io::Error> {
+        SourceFd(&self.as_raw_fd()).deregister(registry)
     }
 }
 
