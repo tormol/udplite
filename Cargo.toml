@@ -1,0 +1,17 @@
+[package]
+name = "udplite"
+version = "0.1.0"
+description = "An UDP-Lite wrapper"
+readme = "README.md"
+repository = "https://github.com/tormol/udplite"
+license = "Apache-2.0 / MIT"
+authors = ["Torbjørn Birch Moltu <t.b.moltu@lyse.net>"]
+categories = ["network-programming", "os::unix-apis"]
+edition = "2018"
+
+[dependencies]
+# for UDPLITE_SEND_CSCOV and UDPLITE_RECV_CSCOV, and Android IPPROTO_UDPLITE
+libc = {git="https://github.com/tormol/rust-libc", branch="udplite_cscov"}
+
+[lib]
+path = "udplite.rs"

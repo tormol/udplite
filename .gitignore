@@ -1,0 +1,12 @@
+# Rust
+/target/
+/Cargo.lock
+
+# Autosaves and backups
+*~
+*.tmp
+*.bak
+*.bk
+
+# Settings
+.*/
