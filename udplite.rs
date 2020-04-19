@@ -318,3 +318,15 @@ impl UdpLiteSocket {
         }
     }
 }
+
+
+
+#[cfg(debug_assertions)]
+mod doctest_md_files {
+    macro_rules! mdfile {($content:expr, $attach_to:ident) => {
+        #[doc=$content]
+        #[allow(unused)]
+        enum $attach_to {}
+    }}
+    mdfile!{include_str!("README.md"), Readme}
+}
