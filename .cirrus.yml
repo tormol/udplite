@@ -1,7 +1,7 @@
 task:
-  name: FreeBSD 11.2 amd64 stable
+  name: FreeBSD 12 amd64 stable
   freebsd_instance:
-    image: freebsd-11-2-release-amd64
+    image: freebsd-12-1-release-amd64
     cpu: 1
     memory: 1
   env:
@@ -36,6 +36,9 @@ task:
   build_script:
     - cargo build
   test_script:
+    - ip addr
+    - cat /etc/hosts || true
+    - ip addr add ::1 dev lo scope host
     - cargo test --no-fail-fast
   before_cache_script:
     - rm -rf $HOME/.cargo/registry/index
