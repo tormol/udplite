@@ -38,6 +38,7 @@
 //! let b_addr = b.local_addr().expect("get addr of socket b");
 //! a.send_to(b"Hello UDP-Lite", b_addr).expect("send datagram");
 //!
+//! # b.set_nonblocking(true).expect("enable non-blocking for receiving just in case");
 //! let mut buf = [0u8; 20];
 //! let received_bytes = b.recv(&mut buf).expect("receive datagram");
 //! assert_eq!(received_bytes, "Hello UDP-Lite".len());
