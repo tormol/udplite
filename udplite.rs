@@ -6,7 +6,7 @@
  * copied, modified, or distributed except according to those terms.
  */
 
-//! Exposes the UDP-Lite socket type with an APi similar to `std::net::UdpSocket`.
+//! Exposes the UDP-Lite socket type with an API similar to `std::net::UdpSocket`.
 //!
 //! UDP-Lite is a layer 3 networking protocol very similar to UDP, that allows
 //! receiving partially corrupted packets.
@@ -18,7 +18,7 @@
 //! The protocol is also only implemented on Linux and FreeBSD.
 //! (It looks like Android hasn't disabled it, but I'm not certain).
 //!
-//! this crate is tested on both (non-Android) Linux and FreeBSD.
+//! This crate is tested on both Linux (except Android) and FreeBSD.
 //!
 //! # Examples
 //!
@@ -33,7 +33,7 @@
 //!
 //! // reduce sent and required checksum coverage (whole datagram by default)
 //! a.set_send_checksum_coverage(Some(5)).expect("set partial checksum coverage");
-//! b.set_recv_checksum_coverage_filter(Some(1)).expect("set required checksum coverage");
+//! b.set_recv_checksum_coverage_filter(Some(5)).expect("set required checksum coverage");
 //!
 //! let b_addr = b.local_addr().expect("get addr of socket b");
 //! a.send_to(b"Hello UDP-Lite", b_addr).expect("send datagram");
@@ -281,6 +281,8 @@ impl UdpLiteSocket {
     /// Set the required checksum coverage of payloads of received datagrams.
     ///
     /// Received datagrams with lesser coverage will be discarded by the OS.
+    /// FreeBSD additionally discards any packets with a checksum coverage
+    /// higher than this filter, requiring them to match exactly.
     //
     // FIXME what does `None` mean here?
     pub fn set_recv_checksum_coverage_filter(&self,  coverage: Option<u16>)
@@ -307,6 +309,8 @@ impl UdpLiteSocket {
     /// Set the required checksum coverage of payloads of received datagrams.
     ///
     /// Received datagrams with lesser coverage will be discarded by the OS.
+    /// FreeBSD additionally discards any packets with a checksum coverage
+    /// higher than this filter, requiring them to match exactly.
     //
     // FIXME what does `None` mean here?
     pub fn recv_checksum_coverage_filter(&self)

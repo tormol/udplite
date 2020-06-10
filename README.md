@@ -19,7 +19,9 @@ It's not been released on crates.io yet as it depends on constants not yet avail
 ## Supported operating systems
 
 UDP-Lite is only implemented by Linux and FreeBSD.
-Whether Android supports it I'm not sure about: The kernel has [the constants](https://android.googlesource.com/kernel/common/+/refs/heads/android-mainline/include/net/udplite.h), but some of them are missing from bionic (the Android libc). (only `IPPROTO_UDPLITE` [is present](https://android.googlesource.com/platform/bionic.git/+/refs/heads/master/libc/kernel/uapi/linux/in.h))
+Whether Android supports it I'm not sure about: The kernel has [the constants](https://android.googlesource.com/kernel/common/+/refs/heads/android-mainline/include/net/udplite.h), but some of them are missing from bionic (the Android libc). ([only `IPPROTO_UDPLITE` is present](https://android.googlesource.com/platform/bionic.git/+/refs/heads/master/libc/kernel/uapi/linux/in.h))
+
+The FreeBSD implementation also behaves strangely: sent packets that are not entirely covered completely by the checksum (`UDPLITE_SEND_CSCOV`) seems to be discarded by the OS. (meanwhile such packets sent from Linux are received)
 
 ## mio integration
 
