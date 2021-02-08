@@ -66,6 +66,8 @@
 //! * Sending and receiving multiple datagrams at a time.
 //! * Getting TTL and/or timestamp of received datagrams.
 
+#![cfg(any(target_os="linux", target_os="freebsd", target_os="android"))]
+
 extern crate libc;
 #[cfg(feature="mio_06")]
 extern crate mio_06;
