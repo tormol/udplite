@@ -82,7 +82,7 @@ use std::io::ErrorKind::*;
 use std::ops::Deref;
 use std::fmt::Debug;
 
-use libc::{AF_INET, AF_INET6, SOCK_DGRAM, SOCK_CLOEXEC};
+use libc::{AF_INET, AF_INET6, SOCK_DGRAM, SOCK_CLOEXEC, SOCK_NONBLOCK};
 #[cfg(not(target_os="android"))]
 use libc::IPPROTO_UDPLITE;
 use libc::{socket, bind, getsockopt, setsockopt, socklen_t};
@@ -174,13 +174,18 @@ fn rust_addr_to_sockaddr(addr: &SocketAddr,  storage: &mut sockaddr_storage)
     }
 }
 
-fn try_bind(addr: &SocketAddr) -> Result<UdpLiteSocket, io::Error> {
+fn try_bind(addr: &SocketAddr,  nonblocking: bool)
+-> Result<UdpLiteSocket, io::Error> {
     // safe because it doesn't store any fancy Rust types
     let mut storage = unsafe { mem::zeroed::<sockaddr_storage>() };
     let addr_len = rust_addr_to_sockaddr(&addr, &mut storage);
     let addr_type = storage.ss_family as c_int;
     let sock = unsafe {
-        match socket(addr_type, SOCK_DGRAM | SOCK_CLOEXEC, IPPROTO_UDPLITE) {
+        let mut flags = SOCK_CLOEXEC;
+        if nonblocking {
+            flags |= SOCK_NONBLOCK;
+        }
+        match socket(addr_type, SOCK_DGRAM | flags, IPPROTO_UDPLITE) {
             -1 => return Err(io::Error::last_os_error()),
             fd => UdpLiteSocket::from_raw_fd(fd),
         }
@@ -201,7 +206,7 @@ fn try_bind(addr: &SocketAddr) -> Result<UdpLiteSocket, io::Error> {
 }
 
 impl UdpLiteSocket {
-    /// Create an UDP-Lite socket bound to an address and port.
+    /// Create a blocking UDP-Lite socket bound to an address and port.
     pub fn bind<A: ToSocketAddrs>(addrs: A) -> Result<Self, io::Error> {
         let addrs = match addrs.to_socket_addrs() {
             Ok(iterator) => iterator,
@@ -209,7 +214,23 @@ impl UdpLiteSocket {
         };
         let mut error = io::Error::new(InvalidInput, "could not resolve to any addresses");
         for addr in addrs {
-            match try_bind(&addr) {
+            match try_bind(&addr, false) {
+                Err(e) => error = e,
+                ok => return ok,
+            }
+        }
+        Err(error)
+    }
+
+    /// Create a non-blocking UDP-Lite socket bound to an address and port.
+    pub fn bind_nonblocking<A: ToSocketAddrs>(addrs: A) -> Result<Self, io::Error> {
+        let addrs = match addrs.to_socket_addrs() {
+            Ok(iterator) => iterator,
+            Err(error) => return Err(error)
+        };
+        let mut error = io::Error::new(InvalidInput, "could not resolve to any addresses");
+        for addr in addrs {
+            match try_bind(&addr, true) {
                 Err(e) => error = e,
                 ok => return ok,
             }

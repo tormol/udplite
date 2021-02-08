@@ -1,6 +1,8 @@
 extern crate udplite;
+extern crate libc;
 
 use std::net::{Ipv4Addr, Ipv6Addr};
+use std::io::ErrorKind;
 use udplite::UdpLiteSocket;
 
 #[test]
@@ -13,6 +15,36 @@ fn create_ipv4_socket() {
 fn create_ipv6_socket() {
     UdpLiteSocket::bind((Ipv6Addr::from([0; 16]), 0))
         .expect("create IPv6 UDP-Lite socket (bind to [::]:0)");
+}
+
+#[test]
+fn create_nonblocking_socket() {
+    let socket = UdpLiteSocket::bind_nonblocking((Ipv4Addr::new(0, 0, 0, 0), 0))
+        .expect("create nonblocking IPv4 UDP-Lite socket (bind to 0.0.0.0:0)");
+    assert_eq!(
+        socket.recv_from(&mut[0; 10])
+            .expect_err("fail recv with WouldBlock")
+            .kind(),
+        ErrorKind::WouldBlock
+    );
+}
+
+#[test]
+fn nonblocking_doesnt_fail_bind() {
+    match UdpLiteSocket::bind_nonblocking("example.net:1") {
+        Ok(socket) => {
+            assert_eq!(
+                socket.recv_from(&mut[0; 10])
+                    .expect_err("fail recv with WouldBlock")
+                    .kind(),
+                ErrorKind::WouldBlock
+            );
+        }
+        Err(ref e) if e.raw_os_error() == Some(libc::EINPROGRESS) => {
+            panic!("bind_nonblocking() failed with WouldBlock");
+        }
+        Err(_) => {}
+    }
 }
 
 #[test]
