@@ -14,7 +14,6 @@ socket.send(b"Hello UDP-Lite").expect("send datagram");
 ```
 
 This crate is a work in progress.
-It's not been released on crates.io yet as it depends on constants not yet available in libc.
 
 ## Supported operating systems
 

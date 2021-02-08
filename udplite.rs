@@ -80,17 +80,30 @@ use std::io::ErrorKind::*;
 use std::ops::Deref;
 use std::fmt::Debug;
 
-use libc::{AF_INET, AF_INET6, SOCK_DGRAM, IPPROTO_UDPLITE, SOCK_CLOEXEC};
+use libc::{AF_INET, AF_INET6, SOCK_DGRAM, SOCK_CLOEXEC};
+#[cfg(not(target_os="android"))]
+use libc::IPPROTO_UDPLITE;
 use libc::{socket, bind, getsockopt, setsockopt, socklen_t};
 use libc::{sockaddr_storage, sockaddr_in, sockaddr_in6, sockaddr, sa_family_t};
 use libc::{ioctl, FIOCLEX, FIONCLEX, fcntl, F_GETFD, FD_CLOEXEC};
-use libc::{UDPLITE_SEND_CSCOV, UDPLITE_RECV_CSCOV};
 
 #[cfg(feature="mio_06")]
 use mio_06::{event::Evented, unix::EventedFd, Poll, Token as Token_06, Ready, PollOpt};
 
 #[cfg(feature="mio_07")]
 use mio_07::{event::Source, unix::SourceFd, Registry, Token as Token_07, Interest};
+
+// constants not added to libc yet
+#[cfg(target_os="android")]
+const IPPROTO_UDPLITE: c_int = 136;
+#[cfg(any(target_os="linux", target_os="android"))]
+const UDPLITE_SEND_CSCOV: c_int = 10;
+#[cfg(any(target_os="linux", target_os="android"))]
+const UDPLITE_RECV_CSCOV: c_int = 11;
+#[cfg(target_os="freebsd")]
+const UDPLITE_SEND_CSCOV: c_int = 2;
+#[cfg(target_os="freebsd")]
+const UDPLITE_RECV_CSCOV: c_int = 4;
 
 
 

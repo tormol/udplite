@@ -10,8 +10,7 @@ categories = ["network-programming", "asynchronous", "os::unix-apis"]
 edition = "2018"
 
 [dependencies]
-# for UDPLITE_SEND_CSCOV and UDPLITE_RECV_CSCOV, and Android IPPROTO_UDPLITE
-libc = {git="https://github.com/tormol/rust-libc", branch="udplite_cscov"}
+libc = "0.2.59"
 # 0.6.13 drags in libc 0.1 when built with -Z minimal-versions
 mio_06 = {package="mio", version="0.6.14", optional=true}
 mio_07 = {package="mio", version="0.7.0", optional=true, features=["os-util"]}
