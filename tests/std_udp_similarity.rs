@@ -8,8 +8,9 @@ use udplite::UdpLiteSocket;
 
 #[test]
 fn debug_implementation_unbound() {
-    let udplite_socket = unsafe { UdpLiteSocket::from_raw_fd(-1) };
-    let std_udp_socket = unsafe { UdpSocket::from_raw_fd(-1) };
+    // -1 is now reserved as a niche for None
+    let udplite_socket = unsafe { UdpLiteSocket::from_raw_fd(-2) };
+    let std_udp_socket = unsafe { UdpSocket::from_raw_fd(-2) };
     let udplite_dbg = format!("{:?}", udplite_socket);
     let std_udp_dbg = format!("{:?}", std_udp_socket);
     assert_eq!(&udplite_dbg[7..], &std_udp_dbg[3..]);
