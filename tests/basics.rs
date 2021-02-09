@@ -1,9 +1,47 @@
 extern crate udplite;
 extern crate libc;
+extern crate ifaces;
+extern crate once_cell;
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket};
 use std::io::ErrorKind;
+use ifaces::Interface;
+use once_cell::sync::Lazy;
 use udplite::UdpLiteSocket;
+
+/// cirrus-CI uses kubernetes which doesn't add ::1
+/// but the internet interface has a link-local IPv6 address.
+/// Being more complex they are more likely to expose bugs,
+/// so try to find one even if loopback is usable.
+/// If IPv6 doesn't work at all, don't run the tests that use it.
+/// ifaces has fewer downloads than get_if_addrs,
+/// but get_if_addrs appears to filter out link-local addresses.
+static IPV6_ADDR: Lazy<Option<Ipv6Addr>> = Lazy::new(|| {
+    let addr = Interface::get_all()
+        .unwrap_or_else(|err| {
+            eprintln!("cannot get network interfaces: {}", err);
+            Vec::new()
+        })
+        .into_iter()
+        .inspect(|interface| println!("interface {}: {:?}", interface.name, interface.addr) )
+        .filter_map(|interface| interface.addr )
+        .filter_map(|addr| match addr {
+            SocketAddr::V6(addr) => Some(addr),
+            SocketAddr::V4(_) => None,
+        })
+        .map(|addr| *addr.ip() )
+        .filter(|ip| !ip.is_loopback() )
+        .inspect(|ip| println!("choose {}", ip) )
+        .next()
+        .unwrap_or_else(|| {
+            eprintln!("no addrs found");
+            Ipv6Addr::LOCALHOST
+        });
+    match UdpSocket::bind((addr, 0)) {
+        Ok(_) => Some(addr),
+        Err(_) => None
+    }
+});
 
 #[test]
 fn create_ipv4_socket() {
@@ -49,32 +87,34 @@ fn nonblocking_doesnt_fail_bind() {
 
 #[test]
 fn send_connected_ipv6() {
-    let a = UdpLiteSocket::bind((Ipv6Addr::LOCALHOST, 0))
-        .expect("create UDP-Lite socket bound to [::1]:0");
-    let b = UdpLiteSocket::bind((Ipv6Addr::LOCALHOST, 0))
-        .expect("create another socket bound to [::1]:0");
+    if let Some(addr) = *IPV6_ADDR {
+        let a = UdpLiteSocket::bind((addr, 0))
+            .expect("create UDP-Lite socket bound to [::1]:0");
+        let b = UdpLiteSocket::bind((addr, 0))
+            .expect("create another socket bound to [::1]:0");
 
-    let a_addr = a.local_addr().expect("get local addr of socket a");
-    let b_addr = b.local_addr().expect("get local addr of socket b");
-    a.connect(b_addr)
-        .expect(&format!("connect socket a to addr of socket b ({})", b_addr));
-    b.connect(a_addr)
-        .expect(&format!("connect socket b to addr of socket a ({})", a_addr));
+        let a_addr = a.local_addr().expect("get local addr of socket a");
+        let b_addr = b.local_addr().expect("get local addr of socket b");
+        a.connect(b_addr)
+            .expect(&format!("connect socket a to addr of socket b ({})", b_addr));
+        b.connect(a_addr)
+            .expect(&format!("connect socket b to addr of socket a ({})", a_addr));
 
-    let msg = "Hello";
-    let sent_bytes = a.send(msg.as_bytes())
-        .expect(&format!(
-                "Send from socket a ({:?}) to addr of socket b ({})",
-                a, b_addr
-        ));
-    assert_eq!(sent_bytes, msg.len());
-    let mut buf = [0u8; 20];
-    let received_bytes = b.recv(&mut buf)
-        .expect(&format!(
-                "Receive from socket b ({:?}) connected to addr of socket a ({})",
-                b, a_addr
-        ));
-    assert_eq!(&buf[..received_bytes], msg.as_bytes());
+        let msg = "Hello";
+        let sent_bytes = a.send(msg.as_bytes())
+            .expect(&format!(
+                    "Send from socket a ({:?}) to addr of socket b ({})",
+                    a, b_addr
+            ));
+        assert_eq!(sent_bytes, msg.len());
+        let mut buf = [0u8; 20];
+        let received_bytes = b.recv(&mut buf)
+            .expect(&format!(
+                    "Receive from socket b ({:?}) connected to addr of socket a ({})",
+                    b, a_addr
+            ));
+        assert_eq!(&buf[..received_bytes], msg.as_bytes());
+    }
 }
 
 #[test]
