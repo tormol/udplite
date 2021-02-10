@@ -9,7 +9,7 @@ extern crate udplite;
 
 let socket = udplite::UdpLiteSocket::bind("[::]:0").expect("Create UDP-Lite socket");
 socket.set_send_checksum_coverage(Some(0)).expect("disable checksum coverage for payload");
-socket.connect("[::1]:7").expect("set destination");
+socket.connect("localhost:7").expect("set destination");
 socket.send(b"Hello UDP-Lite").expect("send datagram");
 ```
 

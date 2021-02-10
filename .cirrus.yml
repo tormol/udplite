@@ -38,10 +38,7 @@ task:
     - cargo build
     - cargo build --all-features
   test_script:
-    - ip addr
-    - cat /etc/hosts || true
-    - sudo ip addr add ::1 dev lo scope host
-    - cargo test --no-fail-fast --all-features
+    - cargo test --no-fail-fast --all-features -- --nocapture
   before_cache_script:
     - rm -rf $HOME/.cargo/registry/index
 
