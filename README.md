@@ -2,7 +2,7 @@
 
 A Rust library for using [UDP-Lite sockets](http://man7.org/linux/man-pages/man7/udplite.7.html). ([RFC 3828](https://tools.ietf.org/html/rfc3828))
 
-[![crates.io](https://img.shields.io/crates/v/udplite.svg)](https://crates.io/crates/udplite) [![Build Status](https://api.cirrus-ci.com/github/tormol/udplite.svg)](https://cirrus-ci.com/github/tormol/udplite) ![License](https://img.shields.io/crates/l/udplite.svg) [![Documentation](https://docs.rs/udplite/badge.svg)](https://docs.rs/udplite/)
+[![crates.io](https://img.shields.io/crates/v/udplite.svg)](https://crates.io/crates/udplite) ![License](https://img.shields.io/crates/l/udplite.svg) [![Documentation](https://docs.rs/udplite/badge.svg)](https://docs.rs/udplite/)
 
 ```rust
 extern crate udplite;
@@ -29,7 +29,7 @@ This feature is not enabled by default; enable it in Cargo.toml with:
 
 ```toml
 [dependencies]
-udplite = {version="0.0.0", features=["mio_07"]}
+udplite = {version="0.1.0", features=["mio_07"]}
 ```
 
 Also remember to enable nonblocking mode for the sockets. (`UdpLiteSocket.set_nonblocking(true)`)
